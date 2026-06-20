@@ -8,6 +8,7 @@ import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.RemoteException
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -138,11 +139,14 @@ class MonitorService : Service() {
     }
 
     private fun runShizukuCommand(vararg args: String): Boolean {
+        if (!Shizuku.pingBinder()) return false
         return try {
-            if (!Shizuku.pingBinder()) return false
-            val process = Shizuku.newProcess(args, null, null)
+            val process = Shizuku.newProcess(args as Array<String>, null, null)
             process.waitFor()
             true
+        } catch (e: RemoteException) {
+            Log.e(TAG, "Shizuku RemoteException: ${e.message}")
+            false
         } catch (e: Exception) {
             Log.e(TAG, "Shizuku command failed: ${e.message}")
             false
